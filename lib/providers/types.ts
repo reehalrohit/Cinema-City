@@ -1,5 +1,3 @@
-// lib/providers/types.ts
-
 export type MediaType = "movie" | "series";
 
 export interface MovieCard {
