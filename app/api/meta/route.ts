@@ -1,43 +1,54 @@
-import { NextRequest, NextResponse } from "next/server";
+import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
+
 import { getProvider } from "@/lib/providers";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: NextRequest) {
-  const id = request.nextUrl.searchParams.get("id")?.trim();
+export async function GET(
+  request: NextRequest,
+) {
+  const params =
+    request.nextUrl.searchParams;
+
+  const id =
+    params.get("id")?.trim();
+
   const providerId =
-    request.nextUrl.searchParams.get("provider")?.trim();
+    params.get("provider")?.trim();
 
   if (!id) {
     return NextResponse.json(
       {
         error: "Missing id",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   let provider;
 
   if (providerId) {
-    provider = getProvider(providerId);
+    provider =
+      getProvider(providerId);
   }
 
   /*
-   * If provider isn't explicitly supplied, try the
-   * provider encoded into the ID.
+   * Supports:
    *
-   * Example:
-   * vega:abc123
+   * ?id=vega:https://...
    */
   if (!provider) {
-    const separator = id.indexOf(":");
+    const separator =
+      id.indexOf(":");
 
     if (separator > 0) {
-      const extractedProvider =
-        id.substring(0, separator);
-
-      provider = getProvider(extractedProvider);
+      provider =
+        getProvider(
+          id.slice(0, separator),
+        );
     }
   }
 
@@ -45,35 +56,32 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Provider not found. Use ?provider=<provider-id>.",
+          "Provider not found",
       },
-      { status: 404 }
+      { status: 404 },
     );
   }
 
   try {
-    const meta = await provider.getMeta(
-      id,
-      request.signal
-    );
+    const meta =
+      await provider.getMeta(
+        id,
+        request.signal,
+      );
 
-    return NextResponse.json(meta, {
-      headers: {
-        "Cache-Control":
-          "public, s-maxage=600, stale-while-revalidate=1800",
-      },
-    });
+    return NextResponse.json(meta);
   } catch (error) {
     console.error(
-      `[meta] ${provider.id}`,
-      error
+      `[${provider.id}] meta`,
+      error,
     );
 
     return NextResponse.json(
       {
-        error: "Failed to fetch metadata",
+        error:
+          "Metadata provider failed",
       },
-      { status: 502 }
+      { status: 502 },
     );
   }
 }
