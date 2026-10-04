@@ -1,62 +1,77 @@
-import { NextRequest, NextResponse } from "next/server";
+import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
+
 import { getProvider } from "@/lib/providers";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: NextRequest) {
-  const id = request.nextUrl.searchParams.get("id")?.trim();
+export async function GET(
+  request: NextRequest,
+) {
+  const params =
+    request.nextUrl.searchParams;
 
-  const seasonParam =
-    request.nextUrl.searchParams.get("season");
+  const id =
+    params.get("id")?.trim();
+
+  const season =
+    Number.parseInt(
+      params.get("season") || "1",
+      10,
+    );
 
   const providerId =
-    request.nextUrl.searchParams.get("provider")?.trim();
+    params.get("provider")?.trim();
 
   if (!id) {
     return NextResponse.json(
       {
         error: "Missing id",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  const season = Number.parseInt(
-    seasonParam || "1",
-    10
-  );
-
-  if (!Number.isInteger(season) || season < 1) {
+  if (
+    !Number.isInteger(season) ||
+    season < 1
+  ) {
     return NextResponse.json(
       {
         error: "Invalid season",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   let provider;
 
   if (providerId) {
-    provider = getProvider(providerId);
+    provider =
+      getProvider(providerId);
   }
 
   if (!provider) {
-    const separator = id.indexOf(":");
+    const separator =
+      id.indexOf(":");
 
     if (separator > 0) {
-      provider = getProvider(
-        id.substring(0, separator)
-      );
+      provider =
+        getProvider(
+          id.slice(0, separator),
+        );
     }
   }
 
   if (!provider) {
     return NextResponse.json(
       {
-        error: "Provider not found",
+        error:
+          "Provider not found",
       },
-      { status: 404 }
+      { status: 404 },
     );
   }
 
@@ -64,9 +79,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         error:
-          `Provider "${provider.id}" does not support episodes`,
+          "Provider does not support episodes",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -75,26 +90,24 @@ export async function GET(request: NextRequest) {
       await provider.getEpisodes(
         id,
         season,
-        request.signal
+        request.signal,
       );
 
-    return NextResponse.json(episodes, {
-      headers: {
-        "Cache-Control":
-          "public, s-maxage=300, stale-while-revalidate=900",
-      },
-    });
+    return NextResponse.json(
+      episodes,
+    );
   } catch (error) {
     console.error(
-      `[episodes] ${provider.id}`,
-      error
+      `[${provider.id}] episodes`,
+      error,
     );
 
     return NextResponse.json(
       {
-        error: "Failed to fetch episodes",
+        error:
+          "Episode provider failed",
       },
-      { status: 502 }
+      { status: 502 },
     );
   }
 }
