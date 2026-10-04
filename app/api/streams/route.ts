@@ -1,27 +1,39 @@
-import { NextRequest, NextResponse } from "next/server";
+import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
+
 import { getProvider } from "@/lib/providers";
 
-export const dynamic = "force-dynamic";
-
-const allowedTypes = [
+const VALID_TYPES = [
   "movie",
   "series",
   "episode",
 ] as const;
 
-export async function GET(request: NextRequest) {
-  const params = request.nextUrl.searchParams;
+export const dynamic = "force-dynamic";
 
-  const link = params.get("link")?.trim();
-  const type = params.get("type")?.trim();
-  const providerId = params.get("provider")?.trim();
+export async function GET(
+  request: NextRequest,
+) {
+  const params =
+    request.nextUrl.searchParams;
+
+  const link =
+    params.get("link")?.trim();
+
+  const type =
+    params.get("type")?.trim();
+
+  const providerId =
+    params.get("provider")?.trim();
 
   if (!link) {
     return NextResponse.json(
       {
         error: "Missing link",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -30,60 +42,36 @@ export async function GET(request: NextRequest) {
       {
         error: "Missing type",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (
-    !allowedTypes.includes(
-      type as (typeof allowedTypes)[number]
+    !VALID_TYPES.includes(
+      type as (typeof VALID_TYPES)[number],
     )
   ) {
     return NextResponse.json(
       {
         error:
-          "Invalid type. Use movie, series or episode.",
+          "type must be movie, series or episode",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  let provider;
-
-  if (providerId) {
-    provider = getProvider(providerId);
-  }
-
-  /*
-   * Optional format:
-   *
-   * link=vega:https://example.com/video
-   *
-   * This allows the API to determine the provider.
-   */
-  if (!provider) {
-    const separator = link.indexOf(":");
-
-    if (separator > 0) {
-      const possibleProvider =
-        link.substring(0, separator);
-
-      const found =
-        getProvider(possibleProvider);
-
-      if (found) {
-        provider = found;
-      }
-    }
-  }
+  const provider =
+    getProvider(
+      providerId || "",
+    );
 
   if (!provider) {
     return NextResponse.json(
       {
         error:
-          "Provider not found. Use ?provider=<provider-id>.",
+          "Provider not found",
       },
-      { status: 404 }
+      { status: 404 },
     );
   }
 
@@ -91,33 +79,29 @@ export async function GET(request: NextRequest) {
     const streams =
       await provider.getStreams(
         link,
-        type as "movie" | "series" | "episode",
-        request.signal
+        type as
+          | "movie"
+          | "series"
+          | "episode",
+        request.signal,
       );
 
-    return NextResponse.json(
-      {
-        provider: provider.id,
-        streams,
-      },
-      {
-        headers: {
-          "Cache-Control":
-            "private, max-age=60",
-        },
-      }
-    );
+    return NextResponse.json({
+      provider: provider.id,
+      streams,
+    });
   } catch (error) {
     console.error(
-      `[streams] ${provider.id}`,
-      error
+      `[${provider.id}] streams`,
+      error,
     );
 
     return NextResponse.json(
       {
-        error: "Failed to resolve streams",
+        error:
+          "Stream resolver failed",
       },
-      { status: 502 }
+      { status: 502 },
     );
   }
 }
