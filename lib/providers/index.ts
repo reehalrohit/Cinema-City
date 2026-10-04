@@ -1,7 +1,27 @@
-import { registerProvider } from "./registry";
-import { exampleProvider } from "./example";
+import {
+  registerProvider,
+  getProviders,
+  getProvider,
+} from "./registry";
 
-registerProvider(exampleProvider);
+import vegaProvider from "./vega";
 
-export * from "./registry";
-export * from "./types";
+registerProvider(vegaProvider);
+
+export {
+  registerProvider,
+  getProviders,
+  getProvider,
+};
+
+export type {
+  CinemaProvider,
+  MovieCard,
+  MovieDetails,
+  CatalogSection,
+  Episode,
+  StreamSource,
+  Subtitle,
+  MediaLink,
+  MediaType,
+} from "./types";
