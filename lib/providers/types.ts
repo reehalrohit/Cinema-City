@@ -69,25 +69,9 @@ export interface Subtitle {
 export interface CinemaProvider {
   id: string;
   name: string;
-
-  getCatalog?(): Promise<CatalogSection[]>;
-
-  search(
-    query: string,
-    page?: number
-  ): Promise<MovieCard[]>;
-
-  getMeta(
-    id: string
-  ): Promise<MovieDetails>;
-
-  getEpisodes?(
-    id: string,
-    season: number
-  ): Promise<Episode[]>;
-
-  getStreams(
-    link: string,
-    type: MediaType | "episode"
-  ): Promise<StreamSource[]>;
+  getCatalog?(signal?: AbortSignal): Promise<CatalogSection[]>;
+  search(query: string, page?: number, signal?: AbortSignal): Promise<MovieCard[]>;
+  getMeta(id: string, signal?: AbortSignal): Promise<MovieDetails>;
+  getEpisodes?(id: string, season: number, signal?: AbortSignal): Promise<Episode[]>;
+  getStreams(link: string, type: MediaType | "episode", signal?: AbortSignal): Promise<StreamSource[]>;
 }
