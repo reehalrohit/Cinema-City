@@ -1,80 +1,79 @@
-import { NextRequest, NextResponse } from "next/server";
+import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
+
 import { getProviders } from "@/lib/providers";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: NextRequest) {
-  const query = request.nextUrl.searchParams.get("q")?.trim();
+export async function GET(
+  request: NextRequest,
+) {
+  const params =
+    request.nextUrl.searchParams;
 
-  const pageParam =
-    request.nextUrl.searchParams.get("page");
+  const query =
+    params.get("q")?.trim();
 
-  const page = Math.max(
-    1,
-    Number.parseInt(pageParam || "1", 10) || 1
-  );
+  const page =
+    Number.parseInt(
+      params.get("page") || "1",
+      10,
+    ) || 1;
 
   if (!query) {
     return NextResponse.json(
       {
-        error: "Missing search query",
+        error: "Missing query parameter: q",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (query.length > 100) {
     return NextResponse.json(
       {
-        error: "Search query is too long",
+        error: "Query too long",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  const providers = getProviders();
+  const providers =
+    getProviders();
 
-  if (providers.length === 0) {
-    return NextResponse.json([]);
-  }
+  const results =
+    await Promise.allSettled(
+      providers.map((provider) =>
+        provider.search(
+          query,
+          page,
+          request.signal,
+        ),
+      ),
+    );
 
-  const results = await Promise.allSettled(
-    providers.map((provider) =>
-      provider.search(
-        query,
-        page,
-        request.signal
-      )
-    )
+  const items = results.flatMap(
+    (result) =>
+      result.status === "fulfilled"
+        ? result.value
+        : [],
   );
 
-  const movies = results.flatMap((result) => {
-    if (result.status !== "fulfilled") {
-      return [];
-    }
+  const unique =
+    new Map<string, (typeof items)[number]>();
 
-    return result.value;
-  });
-
-  // Remove duplicate items.
-  const unique = new Map<string, (typeof movies)[number]>();
-
-  for (const movie of movies) {
+  for (const item of items) {
     const key =
-      `${movie.provider}:${movie.id}`.toLowerCase();
+      `${item.provider}:${item.id}`;
 
     if (!unique.has(key)) {
-      unique.set(key, movie);
+      unique.set(key, item);
     }
   }
 
   return NextResponse.json(
     Array.from(unique.values()),
-    {
-      headers: {
-        "Cache-Control":
-          "public, s-maxage=120, stale-while-revalidate=300",
-      },
-    }
   );
 }
