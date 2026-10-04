@@ -4,34 +4,17 @@ import {
 } from "./adapter";
 
 /*
- * IMPORTANT:
+ * Provider boundary only.
  *
- * This file expects the provider implementation to expose
- * Vega-compatible functions.
- *
- * Example:
- *
- * import * as vega from "@/lib/vega-provider";
- *
- * const module: VegaModule = {
- *   id: "vega",
- *   name: "Vega",
- *   catalog: vega.catalog,
- *   genres: vega.genres,
- *   getPosts: vega.getPosts,
- *   getSearchPosts: vega.getSearchPosts,
- *   getMeta: vega.getMeta,
- *   getEpisodes: vega.getEpisodes,
- *   getStream: vega.getStream,
- * };
+ * Connect this object to a provider implementation that you are
+ * authorized to access. No cookies, authentication tokens, DRM
+ * bypasses, CAPTCHA bypasses, or protected-source credentials belong
+ * in this repository.
  */
-
 const module: VegaModule = {
   id: "vega",
   name: "Vega",
-
   catalog: [],
-
   genres: [],
 
   async getPosts() {
@@ -43,9 +26,7 @@ const module: VegaModule = {
   },
 
   async getMeta() {
-    throw new Error(
-      "Vega provider implementation is not configured.",
-    );
+    throw new Error("Vega provider implementation is not configured.");
   },
 
   async getEpisodes() {
@@ -57,7 +38,5 @@ const module: VegaModule = {
   },
 };
 
-export const vegaProvider =
-  createVegaAdapter(module);
-
+export const vegaProvider = createVegaAdapter(module);
 export default vegaProvider;
